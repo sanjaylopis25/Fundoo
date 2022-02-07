@@ -25,5 +25,42 @@ namespace BusinessLayer.Class
                 throw e;
             }
         }
+        public string Login(UserLogin userlogin)
+        {
+            try
+            {
+                return userRL.Login(userlogin);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+        public void ResetPassword(string email, string password, string cpassword)
+        {
+            try
+            {
+                userRL.ResetPassword(email, password, cpassword);
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        public void ForgetPassword(string email)
+        {
+            try
+            {
+                userRL.Equals(email);
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        
     }
 }
