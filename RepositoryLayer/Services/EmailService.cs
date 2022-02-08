@@ -11,7 +11,7 @@ namespace RepositoryLayer.Services
 {
     public class EmailService
     {
-        public static void SendMail(string email, string token)
+        public static void sendMail(string email, string token)
         {
             using (SmtpClient client = new SmtpClient("smtp.gmail.com", 587))
             {
@@ -19,11 +19,11 @@ namespace RepositoryLayer.Services
                 client.EnableSsl = true;
                 client.DeliveryMethod = SmtpDeliveryMethod.Network;
                 client.UseDefaultCredentials = true;
-                client.Credentials = new NetworkCredential("sanjaylopez25@gmail.com", "Sanjay123");
+                client.Credentials = new NetworkCredential("lopissanjay@gmail.com", "Sanjay1234");
 
                 MailMessage msgObj = new MailMessage();
                 msgObj.To.Add(email);
-                msgObj.From = new MailAddress("sanjaylopez25@gmail.com");
+                msgObj.From = new MailAddress("lopissanjay@gmail.com");
                 msgObj.Subject = "Password Reset Link";
                 msgObj.Body = $"FundooNotes/{token}";
                 client.Send(msgObj);

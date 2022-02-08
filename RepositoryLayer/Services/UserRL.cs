@@ -138,12 +138,13 @@ namespace RepositoryLayer.Class
                     queue.Send(MyMessage);
                     Message msg = queue.Receive();
                     msg.Formatter = new BinaryMessageFormatter();
-                    EmailService.SendMail(email, msg.Body.ToString());
+                    EmailService.sendMail(email, msg.Body.ToString());
                     queue.ReceiveCompleted += new ReceiveCompletedEventHandler(msmqQueue_ReceiveCompleted);
 
                     queue.BeginReceive();
                     queue.Close();
                     return true;
+
                 }
                 else
                 {

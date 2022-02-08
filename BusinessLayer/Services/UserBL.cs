@@ -49,11 +49,11 @@ namespace BusinessLayer.Class
             }
         }
 
-        public bool ForgetPassword(string email)
+        public bool ForgetPassword(string Email)
         {
             try
             {
-                return userRL.ForgetPassword(email);
+                return userRL.ForgetPassword(Email);
             }
             catch (Exception e)
             {
