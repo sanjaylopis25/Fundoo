@@ -1,4 +1,5 @@
 ﻿using CommonLayer.User;
+using Experimental.System.Messaging;
 using Microsoft.IdentityModel.Tokens;
 using RepositoryLayer.Interface;
 using RepositoryLayer.Services;
@@ -42,8 +43,32 @@ namespace RepositoryLayer.Class
                 throw e;
             }
         }
-        
-        private static string GenerateJWTToken(string email, int userId)
+        private static string GenerateToken(string email)
+        {
+            if (email == null)
+            {
+                return null;
+            }
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var tokenKey = Encoding.ASCII.GetBytes("THIS_IS_MY_KEY_TO_GENERATE_TOKEN");
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                    new Claim("email", email),
+                    //new Claim("userId", userId.ToString())
+                }),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials =
+                new SigningCredentials(
+                    new SymmetricSecurityKey(tokenKey),
+                    SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
+        private string GenerateJWTToken(string email, int userId)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var tokenKey = Encoding.ASCII.GetBytes("THIS_IS_MY_KEY_TO_GENERATE_TOKEN");
@@ -52,7 +77,7 @@ namespace RepositoryLayer.Class
                 Subject = new ClaimsIdentity(new Claim[]
                 {
                     new Claim("email", email),
-                    new Claim("userId",userId.ToString())
+                    new Claim("userId", userId.ToString())
                 }),
                 Expires = DateTime.UtcNow.AddHours(1),
                 SigningCredentials =
@@ -75,7 +100,7 @@ namespace RepositoryLayer.Class
                 user.phno = userPostModel.phno;
                 user.address = userPostModel.address;
                 user.email = userPostModel.email;
-                user.password = userPostModel.password;
+                user.password = StringCipher.Encrypt(userPostModel.password);
                 user.cpassword = userPostModel.cpassword;
                 user.registeredDate = DateTime.Now;
                 dbContext.Users.Add(user);
@@ -87,16 +112,48 @@ namespace RepositoryLayer.Class
             }
         }
 
-        public void ForgetPassword(string email)
+        public bool ForgetPassword(string email)
         {
             try
             {
-                User user = new User();
-                var result = dbContext.Users.Where(x => x.email == email).FirstOrDefault();
+                var checkemail = dbContext.Users.FirstOrDefault(e => e.email == email);
+                //var checkemail = dbContex.Users.FirstOrDefault(e => e.Email == email);
+                if (checkemail != null)
+                {
+                    MessageQueue queue;
+                    //ADD MESSAGE TO QUEUE
+                    if (MessageQueue.Exists(@".\Private$\FundooQueue"))
+                    {
+                        queue = new MessageQueue(@".\Private$\FundooQueue");
+                    }
+                    else
+                    {
+                        queue = MessageQueue.Create(@".\Private$\FundooQueue");
+                    }
+
+                    Message MyMessage = new Message();
+                    MyMessage.Formatter = new BinaryMessageFormatter();
+                    MyMessage.Body = GenerateJWTToken(email, checkemail.userId);
+                    MyMessage.Label = "Forget Password Email";
+                    queue.Send(MyMessage);
+                    Message msg = queue.Receive();
+                    msg.Formatter = new BinaryMessageFormatter();
+                    EmailService.SendMail(email, msg.Body.ToString());
+                    queue.ReceiveCompleted += new ReceiveCompletedEventHandler(msmqQueue_ReceiveCompleted);
+
+                    queue.BeginReceive();
+                    queue.Close();
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw e;
+
+                throw;
             }
 
         }
@@ -113,6 +170,39 @@ namespace RepositoryLayer.Class
                     result.cpassword = cpassword;
                     dbContext.SaveChanges();
                 }
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        private void msmqQueue_ReceiveCompleted(object sender, ReceiveCompletedEventArgs e)
+        {
+            try
+            {
+                MessageQueue queue = (MessageQueue)sender;
+                Message msg = queue.EndReceive(e.AsyncResult);
+                //EmailService.SendEmail(e.Message.ToString(), GenerateToken(e.Message.ToString()));
+                queue.BeginReceive();
+            }
+            catch (MessageQueueException ex)
+            {
+                if (ex.MessageQueueErrorCode == MessageQueueErrorCode.AccessDenied)
+                {
+                    Console.WriteLine("Access is denied. " +
+                        "Queue might be a system queue.");
+                }
+                // Handle other sources of MessageQueueException.
+            }
+        }
+
+        public List<User> GetAllUsers()
+        {
+            try
+            {
+                var result = dbContext.Users.ToList();
+                return result;
             }
             catch (Exception e)
             {

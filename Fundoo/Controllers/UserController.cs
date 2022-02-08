@@ -6,6 +6,7 @@ using RepositoryLayer.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Fundoo.Controllers
@@ -53,11 +54,12 @@ namespace Fundoo.Controllers
         {
             try
             {
+                //var userEmailObject = User.Claims.First(x => x.Type == "email").Value;
                 if (password != cpassword)
                 {
-                    return BadRequest(new { success = false, message = $"Paswords are not equal" });
+                    return BadRequest(new { success = false, message = $"Paswords are not same" });
                 }
-                // var identity = User.Identity as ClaimsIdentity 
+                //var identity = User.Identity as ClaimsIdentity 
                 this.userBL.ResetPassword(email, password, cpassword);
                 return this.Ok(new { success = true, message = $"Password changed Successfully {email}" });
             }
@@ -81,6 +83,19 @@ namespace Fundoo.Controllers
                 throw;
             }
 
+        }
+        [HttpGet("getallusers")]
+        public ActionResult GetAllUsers()
+        {
+            try
+            {
+                var result = this.userBL.GetAllUsers();
+                return this.Ok(new { success = true, message = $"Below are the User data", data = result });
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
         }
     }
 }

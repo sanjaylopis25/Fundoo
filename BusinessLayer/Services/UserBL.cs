@@ -49,11 +49,11 @@ namespace BusinessLayer.Class
             }
         }
 
-        public void ForgetPassword(string email)
+        public bool ForgetPassword(string email)
         {
             try
             {
-                userRL.Equals(email);
+                return userRL.ForgetPassword(email);
             }
             catch (Exception e)
             {
@@ -61,6 +61,16 @@ namespace BusinessLayer.Class
             }
         }
 
-        
+        public List<User> GetAllUsers()
+        {
+            try
+            {
+                return userRL.GetAllUsers();
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
     }
 }
