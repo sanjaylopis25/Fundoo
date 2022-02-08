@@ -184,7 +184,7 @@ namespace RepositoryLayer.Class
             {
                 MessageQueue queue = (MessageQueue)sender;
                 Message msg = queue.EndReceive(e.AsyncResult);
-                //EmailService.SendEmail(e.Message.ToString(), GenerateToken(e.Message.ToString()));
+                EmailService.sendMail(e.Message.ToString(), GenerateToken(e.Message.ToString()));
                 queue.BeginReceive();
             }
             catch (MessageQueueException ex)
